@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="chtgupta.wallpaperapp">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -10,7 +14,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WallpaperApp">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.activity.WallpaperActivity"
+            android:exported="false"
+            android:label="@string/title_activity_wallpaper"
+            android:theme="@style/Theme.WallpaperApp.NoActionBar" />
+        <activity
+            android:name=".ui.activity.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.WallpaperApp.NoActionBar">

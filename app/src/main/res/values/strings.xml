@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Wallpaper App</string>
+
+    <string name="message_loading">Loading wallpapers…</string>
+    <string name="title_activity_wallpaper">WallpaperActivity</string>
+    <string name="label_apply_wallpaper">Apply wallpaper</string>
 </resources>
