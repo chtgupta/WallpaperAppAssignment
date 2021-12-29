@@ -12,8 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
-class MainActivityViewModel(initialState: MainActivityState) :
-    MavericksViewModel<MainActivityState>(initialState) {
+class HomeActivityViewModel(initialState: HomeActivityState) :
+    MavericksViewModel<HomeActivityState>(initialState) {
 
     fun loadWallpapers(client: HttpClient) {
 

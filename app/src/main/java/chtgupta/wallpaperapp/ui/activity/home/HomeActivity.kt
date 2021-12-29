@@ -37,7 +37,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class HomeActivity : ComponentActivity() {
 
     companion object {
         const val TAG = "MainActivityAPI"
@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainInterface() {
 
-        val viewModel: MainActivityViewModel = mavericksViewModel()
+        val viewModel: HomeActivityViewModel = mavericksViewModel()
         val listState by mutableStateOf(viewModel.collectAsState { it.wallpapers })
 
         val list by rememberSaveable { mutableStateOf(listState) }
@@ -121,7 +121,7 @@ class MainActivity : ComponentActivity() {
 
         }
 
-        val viewModel: MainActivityViewModel = mavericksViewModel()
+        val viewModel: HomeActivityViewModel = mavericksViewModel()
         viewModel.loadWallpapers(client)
 
     }
@@ -133,7 +133,7 @@ class MainActivity : ComponentActivity() {
     fun WallpapersInterface(list: List<Wallpaper>) {
 
         val context = LocalContext.current
-        val viewModel: MainActivityViewModel = mavericksViewModel()
+        val viewModel: HomeActivityViewModel = mavericksViewModel()
         val spanState by mutableStateOf(viewModel.collectAsState { it.span })
 
         Surface(color = MaterialTheme.colors.background) {

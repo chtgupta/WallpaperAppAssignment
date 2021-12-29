@@ -8,17 +8,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.List
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,15 +92,19 @@ class PreviewActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 )
 
-                Button(onClick = {
+                OutlinedButton(onClick = {
 
                     val manager = WallpaperManager.getInstance(context)
                     manager.setBitmap(bitmap)
                     context.toast(R.string.message_wallpaper_set)
 
-                }, modifier = Modifier.align(
-                    Alignment.BottomCenter).padding(24.dp).fillMaxWidth()) {
-                    Text(text = stringResource(id = R.string.label_apply_wallpaper), fontSize = 18.sp)
+                }, modifier = Modifier
+                    .align(
+                        Alignment.BottomCenter
+                    )
+                    .padding(24.dp)
+                    .fillMaxWidth()) {
+                    Text(text = stringResource(id = R.string.label_apply_wallpaper), fontSize = 18.sp, modifier = Modifier.padding(vertical = 12.dp))
                 }
 
             }
