@@ -46,6 +46,7 @@ import javax.inject.Inject
 
 data class MainActivityState(val wallpapers: MutableList<Wallpaper> = mutableListOf(), val span: Int = SPAN_GRID) : MavericksState
 
+
 class MainActivityViewModel(initialState: MainActivityState) : MavericksViewModel<MainActivityState>(initialState) {
 
     fun loadWallpapers(client: HttpClient) {
@@ -53,7 +54,6 @@ class MainActivityViewModel(initialState: MainActivityState) : MavericksViewMode
         viewModelScope.launch(Dispatchers.IO) {
 
             val list = getPhotos(client) ?: return@launch
-            /*Log.d(MainActivity.TAG, "loadWallpapers: received ${list.size} wallpapers")*/
             setState { copy(wallpapers = list) }
 
         }
@@ -68,10 +68,6 @@ class MainActivityViewModel(initialState: MainActivityState) : MavericksViewMode
     }
 
     private suspend fun getPhotos(client: HttpClient): MutableList<Wallpaper>? {
-
-        /*Log.d(MainActivity.TAG, "getPhotos: sending request to $PHOTOS_URL")*/
-
-        /*val client = HttpClient(Android)*/
 
         val response = try {
             client.get<String>(PHOTOS_URL) {
@@ -127,8 +123,6 @@ class MainActivity : ComponentActivity() {
 
         val list by rememberSaveable { mutableStateOf(listState) }
         val shouldShowLoading = list.value.isEmpty()
-
-        /*Log.d(MainActivity.TAG, "Interface: fired! list size: ${listState.value.size} ")*/
 
         Column(modifier = Modifier.fillMaxSize()) {
 
