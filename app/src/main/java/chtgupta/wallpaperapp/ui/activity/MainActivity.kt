@@ -40,17 +40,19 @@ import com.airbnb.mvrx.*
 import com.airbnb.mvrx.compose.collectAsState
 import com.airbnb.mvrx.compose.mavericksViewModel
 import com.skydoves.landscapist.glide.GlideImage
+import dagger.hilt.android.AndroidEntryPoint
 import java.lang.Exception
+import javax.inject.Inject
 
 data class MainActivityState(val wallpapers: MutableList<Wallpaper> = mutableListOf(), val span: Int = SPAN_GRID) : MavericksState
 
 class MainActivityViewModel(initialState: MainActivityState) : MavericksViewModel<MainActivityState>(initialState) {
 
-    fun loadWallpapers() {
+    fun loadWallpapers(client: HttpClient) {
 
         viewModelScope.launch(Dispatchers.IO) {
 
-            val list = getPhotos() ?: return@launch
+            val list = getPhotos(client) ?: return@launch
             /*Log.d(MainActivity.TAG, "loadWallpapers: received ${list.size} wallpapers")*/
             setState { copy(wallpapers = list) }
 
@@ -65,13 +67,41 @@ class MainActivityViewModel(initialState: MainActivityState) : MavericksViewMode
         setState { copy(span = SPAN_LIST) }
     }
 
+    private suspend fun getPhotos(client: HttpClient): MutableList<Wallpaper>? {
+
+        /*Log.d(MainActivity.TAG, "getPhotos: sending request to $PHOTOS_URL")*/
+
+        /*val client = HttpClient(Android)*/
+
+        val response = try {
+            client.get<String>(PHOTOS_URL) {
+                this.headers["Authorization"] = AUTH_KEY
+            }
+        } catch (e: Exception) {
+
+            // Pexels API was giving random 500 status codes this morning so I added this fallback JSON
+            FALLBACK_JSON
+        }
+
+        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+        val adapter = moshi.adapter(PexelsResponse::class.java)
+        val pexelsResponse = adapter.fromJson(response)
+
+        return pexelsResponse?.wallpapers
+    }
+
 }
 
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     companion object {
         const val TAG = "MainActivityAPI"
     }
+
+    @Inject
+    lateinit var client: HttpClient
 
     @ExperimentalMaterialApi
     @ExperimentalFoundationApi
@@ -85,152 +115,130 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-}
 
-private suspend fun getPhotos(): MutableList<Wallpaper>? {
+    @ExperimentalMaterialApi
+    @SuppressLint("UnrememberedMutableState")
+    @ExperimentalFoundationApi
+    @Composable
+    fun MainInterface() {
 
-    /*Log.d(MainActivity.TAG, "getPhotos: sending request to $PHOTOS_URL")*/
+        val viewModel: MainActivityViewModel = mavericksViewModel()
+        val listState by mutableStateOf(viewModel.collectAsState { it.wallpapers })
 
-    val client = HttpClient(Android)
+        val list by rememberSaveable { mutableStateOf(listState) }
+        val shouldShowLoading = list.value.isEmpty()
 
-    val response = try {
-        client.get<String>(PHOTOS_URL) {
-            this.headers["Authorization"] = AUTH_KEY
-        }
-    } catch (e: Exception) {
+        /*Log.d(MainActivity.TAG, "Interface: fired! list size: ${listState.value.size} ")*/
 
-        // Pexels API was giving random 500 status codes this morning so I added this fallback JSON
-        FALLBACK_JSON
-    }
+        Column(modifier = Modifier.fillMaxSize()) {
 
-    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-    val adapter = moshi.adapter(PexelsResponse::class.java)
-    val pexelsResponse = adapter.fromJson(response)
-
-    return pexelsResponse?.wallpapers
-}
-
-@ExperimentalMaterialApi
-@SuppressLint("UnrememberedMutableState")
-@ExperimentalFoundationApi
-@Composable
-fun MainInterface() {
-
-    val viewModel: MainActivityViewModel = mavericksViewModel()
-    val listState by mutableStateOf(viewModel.collectAsState { it.wallpapers })
-
-    val list by rememberSaveable { mutableStateOf(listState) }
-    val shouldShowLoading = list.value.isEmpty()
-
-    /*Log.d(MainActivity.TAG, "Interface: fired! list size: ${listState.value.size} ")*/
-
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .background(color = Purple700),
-            contentAlignment = Alignment.Center
-        ) {
-
-            Text(
-                text = stringResource(R.string.title_home),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-
-        }
-
-        if (shouldShowLoading) {
-            LoadingInterface()
-        } else {
-            WallpapersInterface(list = listState.value)
-        }
-
-    }
-
-}
-
-@Composable
-fun LoadingInterface() {
-
-    Surface(color = MaterialTheme.colors.background) {
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            CircularProgressIndicator()
-            Text(
-                text = stringResource(id = R.string.message_loading),
-                modifier = Modifier.padding(top = 24.dp)
-            )
-
-        }
-
-    }
-
-    val viewModel: MainActivityViewModel = mavericksViewModel()
-    viewModel.loadWallpapers()
-
-}
-
-@SuppressLint("UnrememberedMutableState")
-@ExperimentalMaterialApi
-@ExperimentalFoundationApi
-@Composable
-fun WallpapersInterface(list: List<Wallpaper>) {
-
-    val context = LocalContext.current
-    val viewModel: MainActivityViewModel = mavericksViewModel()
-    val spanState by mutableStateOf(viewModel.collectAsState { it.span })
-
-    Surface(color = MaterialTheme.colors.background) {
-
-        Box(modifier = Modifier.fillMaxSize()) {
-
-            LazyVerticalGrid(
-                cells = GridCells.Fixed(spanState.value), modifier = Modifier
-                    .fillMaxSize()
-                    .padding(end = 16.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .background(color = Purple700),
+                contentAlignment = Alignment.Center
             ) {
 
-                items(list.size) { index ->
+                Text(
+                    text = stringResource(R.string.title_home),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
 
-                    Card(modifier = Modifier.padding(top = 16.dp, start = 16.dp), onClick = {
+            }
 
-                        context.startActivity(
-                            Intent(context, WallpaperActivity::class.java)
-                                .putExtra(EXTRA_WALLPAPER, list[index])
-                        )
+            if (shouldShowLoading) {
+                LoadingInterface()
+            } else {
+                WallpapersInterface(list = listState.value)
+            }
 
-                    }) {
+        }
 
-                        GlideImage(
-                            imageModel = list[index].portrait,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
+    }
+
+    @Composable
+    fun LoadingInterface() {
+
+        Surface(color = MaterialTheme.colors.background) {
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                CircularProgressIndicator()
+                Text(
+                    text = stringResource(id = R.string.message_loading),
+                    modifier = Modifier.padding(top = 24.dp)
+                )
+
+            }
+
+        }
+
+        val viewModel: MainActivityViewModel = mavericksViewModel()
+        viewModel.loadWallpapers(client)
+
+    }
+
+    @SuppressLint("UnrememberedMutableState")
+    @ExperimentalMaterialApi
+    @ExperimentalFoundationApi
+    @Composable
+    fun WallpapersInterface(list: List<Wallpaper>) {
+
+        val context = LocalContext.current
+        val viewModel: MainActivityViewModel = mavericksViewModel()
+        val spanState by mutableStateOf(viewModel.collectAsState { it.span })
+
+        Surface(color = MaterialTheme.colors.background) {
+
+            Box(modifier = Modifier.fillMaxSize()) {
+
+                LazyVerticalGrid(
+                    cells = GridCells.Fixed(spanState.value), modifier = Modifier
+                        .fillMaxSize()
+                        .padding(end = 16.dp)
+                ) {
+
+                    items(list.size) { index ->
+
+                        Card(modifier = Modifier.padding(top = 16.dp, start = 16.dp), onClick = {
+
+                            context.startActivity(
+                                Intent(context, WallpaperActivity::class.java)
+                                    .putExtra(EXTRA_WALLPAPER, list[index])
+                            )
+
+                        }) {
+
+                            GlideImage(
+                                imageModel = list[index].portrait,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                        }
 
                     }
 
                 }
 
-            }
+                FloatingActionButton(
+                    onClick = { if (spanState.value == SPAN_GRID) viewModel.setList() else viewModel.setGrid() },
+                    modifier = Modifier
+                        .align(
+                            Alignment.BottomEnd
+                        )
+                        .padding(24.dp)
+                ) {
+                    Icon(Icons.Filled.List, null)
+                }
 
-            FloatingActionButton(
-                onClick = { if (spanState.value == SPAN_GRID) viewModel.setList() else viewModel.setGrid() },
-                modifier = Modifier
-                    .align(
-                        Alignment.BottomEnd
-                    )
-                    .padding(24.dp)
-            ) {
-                Icon(Icons.Filled.List, null)
             }
 
         }
