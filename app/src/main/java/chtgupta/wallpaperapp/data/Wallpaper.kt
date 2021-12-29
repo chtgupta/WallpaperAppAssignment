@@ -5,7 +5,8 @@ import java.io.Serializable
 
 data class Wallpaper(@Json(name = "src") val sources: Map<String, String>) : Serializable {
 
-    val original = sources["original"]
+    val original = sources["medium"]
     val small = sources["small"]
+    val portrait = sources["portrait"]
 
 }
