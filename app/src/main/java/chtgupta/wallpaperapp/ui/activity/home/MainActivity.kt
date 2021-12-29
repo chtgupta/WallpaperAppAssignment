@@ -1,4 +1,4 @@
-package chtgupta.wallpaperapp.ui.activity
+package chtgupta.wallpaperapp.ui.activity.home
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -25,69 +25,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import chtgupta.wallpaperapp.R
 import chtgupta.wallpaperapp.constant.*
-import chtgupta.wallpaperapp.data.PexelsResponse
 import chtgupta.wallpaperapp.data.Wallpaper
+import chtgupta.wallpaperapp.ui.activity.preview.PreviewActivity
 import chtgupta.wallpaperapp.ui.theme.Purple700
 import chtgupta.wallpaperapp.ui.theme.WallpaperAppTheme
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.ktor.client.*
-import io.ktor.client.engine.android.*
-import io.ktor.client.request.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import com.airbnb.mvrx.*
 import com.airbnb.mvrx.compose.collectAsState
 import com.airbnb.mvrx.compose.mavericksViewModel
 import com.skydoves.landscapist.glide.GlideImage
 import dagger.hilt.android.AndroidEntryPoint
-import java.lang.Exception
 import javax.inject.Inject
-
-data class MainActivityState(val wallpapers: MutableList<Wallpaper> = mutableListOf(), val span: Int = SPAN_GRID) : MavericksState
-
-
-class MainActivityViewModel(initialState: MainActivityState) : MavericksViewModel<MainActivityState>(initialState) {
-
-    fun loadWallpapers(client: HttpClient) {
-
-        viewModelScope.launch(Dispatchers.IO) {
-
-            val list = getPhotos(client) ?: return@launch
-            setState { copy(wallpapers = list) }
-
-        }
-    }
-
-    fun setGrid() {
-        setState { copy(span = SPAN_GRID) }
-    }
-
-    fun setList() {
-        setState { copy(span = SPAN_LIST) }
-    }
-
-    private suspend fun getPhotos(client: HttpClient): MutableList<Wallpaper>? {
-
-        val response = try {
-            client.get<String>(PHOTOS_URL) {
-                this.headers["Authorization"] = AUTH_KEY
-            }
-        } catch (e: Exception) {
-
-            // Pexels API was giving random 500 status codes this morning so I added this fallback JSON
-            FALLBACK_JSON
-        }
-
-        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-        val adapter = moshi.adapter(PexelsResponse::class.java)
-        val pexelsResponse = adapter.fromJson(response)
-
-        return pexelsResponse?.wallpapers
-    }
-
-}
-
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -204,7 +151,7 @@ class MainActivity : ComponentActivity() {
                         Card(modifier = Modifier.padding(top = 16.dp, start = 16.dp), onClick = {
 
                             context.startActivity(
-                                Intent(context, WallpaperActivity::class.java)
+                                Intent(context, PreviewActivity::class.java)
                                     .putExtra(EXTRA_WALLPAPER, list[index])
                             )
 
